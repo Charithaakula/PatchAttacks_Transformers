@@ -1,7 +1,10 @@
 # PatchAttacks_Transformers
 
 ## Intro:
-Main changes are in 'patchattackgrad_multi.py'. Need to install necesary packages to run this locally
+1. The main changes are in patchattackgrad_multi.py.
+2. Install necessary packages to run the file locally.
+3. Each attack against a model is run with a fixed set of 1000 images from Imagenet. 
+4. Both clean and robust accuracy are calculated accordingly.
 
 ## Running attacks:
 1. Run 'generate.py' by adding various options for all the test cases to be generated. 
