@@ -57,6 +57,7 @@ mtype_dict = {'vit384': 'vit_base_patch16_384', 'vit224': 'vit_base_patch16_224'
                 'conv2_base':'convnextv2_base', 'conv2_huge': 'convnextv2_huge', 'conv2_large':'convnextv2_large', 'convit_base': 'convit_base', 
                 'convit_tiny': 'convit_tiny', 'convit_small': 'convit_small',
                 'clip_vit_b16': 'ViT-B/16', 'clip_vit_b32': 'ViT-B/32', 'clip_vit_l16': 'ViT-L/16', 'clip_vit_l32': 'ViT-L/32', 'clip_vit_h14': 'ViT-H/14',
+                'clip_resnet50': 'RN50', 'clip_resnet101': 'RN101', 'clip_resnet50x4': 'RN50x4', 'clip_resnet50x16': 'RN50x16',
                 }
 #att_type_dict = {'pgdlinf': fb.attacks.LinfProjectedGradientDescentAttack(rel_stepsize=0.033, steps=40, random_start=True),
 #                 'pgdl2': fb.attacks.L2ProjectedGradientDescentAttack(steps=40, random_start=True)
