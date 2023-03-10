@@ -28,6 +28,8 @@ from timm.data import resolve_data_config
 from timm.data.transforms_factory import create_transform
 # ,apply_test_time_pool, load_checkpoint, is_model, list_models
 from timm.models import create_model
+import clip
+from clip_utils import ClipLoss, get_imagenet_text_embeddings, CLIPWrapper
 
 matplotlib.use('Agg')
 
@@ -54,7 +56,8 @@ mtype_dict = {'vit384': 'vit_base_patch16_384', 'vit224': 'vit_base_patch16_224'
                 'maxvit': 'maxvit_base_224', 'maxvit_large':'maxvit_xlarge_224',
                 'conv2_base':'convnextv2_base', 'conv2_huge': 'convnextv2_huge', 'conv2_large':'convnextv2_large', 'convit_base': 'convit_base', 
                 'convit_tiny': 'convit_tiny', 'convit_small': 'convit_small',
-                    }
+                'clip_vit_b16': 'ViT-B/16', 'clip_vit_b32': 'ViT-B/32', 'clip_vit_l16': 'ViT-L/16', 'clip_vit_l32': 'ViT-L/32', 'clip_vit_h14': 'ViT-H/14',
+                }
 #att_type_dict = {'pgdlinf': fb.attacks.LinfProjectedGradientDescentAttack(rel_stepsize=0.033, steps=40, random_start=True),
 #                 'pgdl2': fb.attacks.L2ProjectedGradientDescentAttack(steps=40, random_start=True)
 #                 }
@@ -205,17 +208,25 @@ if __name__ == '__main__':
 #    logging.info(f'Running {att_type} for {model_name} for imagenet')
     if model_name is None:
         raise Exception(f'{mtype}: No such model type found')
-
-    model = create_model(model_name, pretrained=True)
-    # model.reset_classifier(num_classes=10)
-    config = resolve_data_config({}, model=model)
-    print(config)
-    transforms = create_transform(**config)
+    if 'clip' in mtype:
+        model, transforms = clip.load(model_name, device=device) 
+        model = CLIPWrapper(model, device)
+        clip_labels = get_imagenet_text_embeddings(model, device)
+        config ={
+            'mean': (0.48145466, 0.4578275, 0.40821073),
+            'std': (0.26862954, 0.26130258, 0.27577711),
+        }
+    else:
+        model = create_model(model_name, pretrained=True)
+        # model.reset_classifier(num_classes=10)
+        config = resolve_data_config({}, model=model)
+        print(config)
+        transforms = create_transform(**config)
     #cifar10_test = CIFAR10(root='./datasets/test/', download=True, train=False, transform=transforms)
     #indices = np.load('imagenet_indices.npy')
     indices = np.load('indices_10k.npy')
     imagenet_val = Subset(
-        ImageNet(root=args.dpath, split='val', transform=transforms), indices)
+        ImageNet(root=args.dpath + '/val', split='val', transform=transforms), indices)
     test_dl = DataLoader(imagenet_val, batch_size=1)
 
     model = model.to(device)
@@ -261,8 +272,9 @@ if __name__ == '__main__':
 
         bs, ch, sx, sy = img.shape
         label = label.to(device)
-        succ, img, attack_img, num_patches = MultiPatchGDAttack(model, img, label, loss=nn.CrossEntropyLoss(
-        ), iterations=args.iteration, device=device, max_num_patches=args.max_patches, clip_flag=clip_flag, bounds=bounds, patch_size=args.patch_size, lr=args.lr, epsilon=eps_val)
+
+        loss = nn.CrossEntropyLoss()
+        succ, img, attack_img, num_patches = MultiPatchGDAttack(model, img, label, loss=loss, iterations=args.iteration, device=device, max_num_patches=args.max_patches, clip_flag=clip_flag, bounds=bounds, patch_size=args.patch_size, lr=args.lr, epsilon=eps_val)
         logging.info(f'{idx}, {succ}, {num_patches}')
         attack_succ += succ
         ks[idx] = (succ, num_patches)
