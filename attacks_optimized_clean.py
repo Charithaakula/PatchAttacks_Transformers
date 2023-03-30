@@ -30,6 +30,7 @@ from timm.data.transforms_factory import create_transform
 from timm.models import create_model
 import clip
 from clip_utils import ClipLoss, get_imagenet_text_embeddings, CLIPWrapper
+from collections import OrderedDict
 
 matplotlib.use('Agg')
 
@@ -58,6 +59,7 @@ mtype_dict = {'vit384': 'vit_base_patch16_384', 'vit224': 'vit_base_patch16_224'
                 'convit_tiny': 'convit_tiny', 'convit_small': 'convit_small',
                 'clip_vit_b16': 'ViT-B/16', 'clip_vit_b32': 'ViT-B/32', 'clip_vit_l16': 'ViT-L/16', 'clip_vit_l32': 'ViT-L/32', 'clip_vit_h14': 'ViT-H/14',
                 'clip_resnet50': 'RN50', 'clip_resnet101': 'RN101', 'clip_resnet50x4': 'RN50x4', 'clip_resnet50x16': 'RN50x16',
+                'lit_swin': 'swin_base_patch4_window7_224'
                 }
 #att_type_dict = {'pgdlinf': fb.attacks.LinfProjectedGradientDescentAttack(rel_stepsize=0.033, steps=40, random_start=True),
 #                 'pgdl2': fb.attacks.L2ProjectedGradientDescentAttack(steps=40, random_start=True)
@@ -159,6 +161,7 @@ def build_parser():
     parser.add_argument('-dpath', help='Data path',
                         default='/data/datasets/Imagenet/val')
     parser.add_argument('--gpu', help='gpu to use', default=0, type=int)
+    parser.add_argument('-mpt', '--model_path', help='Model path', default=None)
  #   parser.add_argument('-at', '--att_type', help='Attack type',
  #                       choices=['pgdl2', 'pgdlinf', 'gd'], default='pgdlinf')
     parser.add_argument(
@@ -223,6 +226,16 @@ if __name__ == '__main__':
         config = resolve_data_config({}, model=model)
         print(config)
         transforms = create_transform(**config)
+        if args.mtype == 'lit_swin':
+            print('Loading model path from LIT-SWIN')
+            sd = torch.load(args.model_path)['state_dict']
+            sd_mod = OrderedDict()
+            for k, v in sd.items():
+                if 'module.visual.trunk' in k:
+                    sd_mod[k[20:]] = v
+                else:
+                    sd_mod[k] = v
+            model.load_state_dict(sd_mod, strict=False)
     #cifar10_test = CIFAR10(root='./datasets/test/', download=True, train=False, transform=transforms)
     #indices = np.load('imagenet_indices.npy')
     indices = np.load('indices_10k.npy')
